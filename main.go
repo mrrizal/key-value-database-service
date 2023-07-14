@@ -14,8 +14,10 @@ func main() {
 	storeHandler := handler.NewStoreHandler(storeService)
 
 	r := mux.NewRouter()
-	r.HandleFunc("/v1/{key}/", storeHandler.Put).Methods("PUT")
-	r.HandleFunc("/v1/{key}/", storeHandler.Get).Methods("GET")
+	r.HandleFunc("/v1/{key}", storeHandler.Put).Methods("PUT")
+	r.HandleFunc("/v1/{key}", storeHandler.Get).Methods("GET")
+	r.HandleFunc("/v1/{key}", storeHandler.Delete).Methods("DELETE")
 
+	log.Println("starting the server...")
 	log.Fatal(http.ListenAndServe(":8080", r))
 }
