@@ -21,7 +21,7 @@ var _ = Describe("Put", func() {
 	It("should store the value correctly", func() {
 		err := svc.Put(key, value)
 		Expect(err).To(BeNil())
-		Expect(svc.store[key]).To(Equal(value))
+		Expect(svc.store.m[key]).To(Equal(value))
 	})
 })
 
@@ -36,7 +36,7 @@ var _ = Describe("Get", func() {
 		It("should return the corresponding value", func() {
 			key := "existingKey"
 			value := "existingValue"
-			svc.store[key] = value
+			svc.store.m[key] = value
 
 			result, err := svc.Get(key)
 			Expect(err).To(BeNil())
@@ -73,11 +73,11 @@ var _ = Describe("Delete", func() {
 		It("should remove the key-value pair from the store", func() {
 			key := "existingKey"
 			value := "existingValue"
-			svc.store[key] = value
+			svc.store.m[key] = value
 
 			err := svc.Delete(key)
 			Expect(err).To(BeNil())
-			_, exists := svc.store[key]
+			_, exists := svc.store.m[key]
 			Expect(exists).To(BeFalse())
 		})
 	})
@@ -94,7 +94,7 @@ var _ = Describe("Delete", func() {
 			key := "nonexistentKey"
 
 			_ = svc.Delete(key)
-			Expect(len(svc.store)).To(BeZero())
+			Expect(len(svc.store.m)).To(BeZero())
 		})
 	})
 })
