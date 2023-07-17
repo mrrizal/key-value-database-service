@@ -69,7 +69,32 @@ var _ = Describe("DeleteHandler", func() {
 
 			Expect(response.StatusCode).To(Equal(http.StatusInternalServerError))
 		})
+
+		It("should return internal server error when transaction logger returns an error", func() {
+			mockService := &service.MockStoreService{
+				DeleteFunc: func(key string) error {
+					return nil
+				},
+			}
+
+			storeHandler.svc = mockService
+			storeHandler.logger = &logger.MockTransactionLogger{
+				WriteDeleteFunc: func(key string) error {
+					return errors.New("transaction logger error")
+				},
+			}
+
+			request, err := http.NewRequest(http.MethodDelete, server.URL+"/store/your-key", nil)
+			Expect(err).NotTo(HaveOccurred())
+
+			response, err := http.DefaultClient.Do(request)
+			Expect(err).NotTo(HaveOccurred())
+			defer response.Body.Close()
+
+			Expect(response.StatusCode).To(Equal(http.StatusInternalServerError))
+		})
 	})
+
 })
 
 var _ = Describe("GetHandler", func() {
@@ -201,6 +226,28 @@ var _ = Describe("PutHandler", func() {
 		It("should return status Internal Server Error on put error", func() {
 			mockService.PutFunc = func(key, value string) error {
 				return errors.New("some error")
+			}
+
+			requestBody := "some value"
+			request, err := http.NewRequest(http.MethodPut, server.URL+"/store/your-key", strings.NewReader(requestBody))
+			Expect(err).NotTo(HaveOccurred())
+
+			response, err := http.DefaultClient.Do(request)
+			Expect(err).NotTo(HaveOccurred())
+			defer response.Body.Close()
+
+			Expect(response.StatusCode).To(Equal(http.StatusInternalServerError))
+		})
+
+		It("should return status Internal Server Error when transaction logger returns an error", func() {
+			mockService.PutFunc = func(key, value string) error {
+				return nil
+			}
+
+			storeHandler.logger = &logger.MockTransactionLogger{
+				WritePutFunc: func(key, value string) error {
+					return errors.New("transaction logger error")
+				},
 			}
 
 			requestBody := "some value"

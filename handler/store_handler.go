@@ -42,7 +42,11 @@ func (s *StoreHandler) Put(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.logger.WritePut(key, string(value))
+	if err := s.logger.WritePut(key, string(value)); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	w.WriteHeader(http.StatusCreated)
 }
 
@@ -72,6 +76,10 @@ func (s *StoreHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	s.logger.WriteDelete(key)
+	if err := s.logger.WriteDelete(key); err != nil {
+		http.Error(w, err.Error(), http.StatusInternalServerError)
+		return
+	}
+
 	w.WriteHeader(http.StatusOK)
 }

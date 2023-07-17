@@ -2,12 +2,13 @@ package logger
 
 import (
 	"bufio"
+	"errors"
 	"fmt"
 	"os"
 )
 
 type FileTransactionLogger struct {
-	events       chan<- Event
+	events       chan Event
 	errors       <-chan error
 	lastSequence int64
 	file         *os.File
@@ -21,18 +22,28 @@ func NewFileTransactionLogger(filename string) (*FileTransactionLogger, error) {
 	return &FileTransactionLogger{file: file}, nil
 }
 
-func (f *FileTransactionLogger) WritePut(key, value string) {
-	f.events <- Event{
+func (f *FileTransactionLogger) WritePut(key, value string) error {
+	select {
+	case f.events <- Event{
 		Type:  EventPut,
 		Key:   key,
 		Value: value,
+	}:
+		return nil
+	default:
+		return errors.New("channel closed or nil")
 	}
 }
 
-func (f *FileTransactionLogger) WriteDelete(key string) {
-	f.events <- Event{
+func (f *FileTransactionLogger) WriteDelete(key string) error {
+	select {
+	case f.events <- Event{
 		Type: EventDelete,
 		Key:  key,
+	}:
+		return nil
+	default:
+		return errors.New("channel closed or nil")
 	}
 }
 
@@ -60,10 +71,14 @@ func (f *FileTransactionLogger) Run() {
 }
 
 func (f *FileTransactionLogger) Close() error {
-	close(f.events)
+	if f.events != nil {
+		close(f.events)
+	}
+
 	if err := f.file.Close(); err != nil {
 		return err
 	}
+
 	return nil
 }
 
@@ -82,12 +97,17 @@ func (f *FileTransactionLogger) ReadEvents() (<-chan Event, <-chan error) {
 
 			_, err := fmt.Sscanf(line, "%d\t%d\t%s\t%s\n", &e.Sequence, &e.Type, &e.Key, &e.Value)
 			if err != nil {
-				outError <- fmt.Errorf("input parse error: %w", err)
-				return
+				_, err := fmt.Sscanf(line, "%d\t%d\t%s\n", &e.Sequence, &e.Type, &e.Key)
+				e.Value = ""
+				if err != nil {
+					outError <- fmt.Errorf("input parse error: %w", err)
+					return
+				}
 			}
 
 			if f.lastSequence >= e.Sequence {
 				outError <- fmt.Errorf("transaction number out of sequence")
+				return
 			}
 
 			f.lastSequence = e.Sequence

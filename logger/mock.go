@@ -1,26 +1,28 @@
 package logger
 
-import (
-	"fmt"
-)
-
 // MockTransactionLogger is a mock implementation of the TransactionLogger interface
 type MockTransactionLogger struct {
-	DeleteCalled bool
-	PutCalled    bool
-	Events       chan Event
-	ErrChannel   chan error
-	Closed       bool
+	DeleteCalled    bool
+	PutCalled       bool
+	Events          chan Event
+	ErrChannel      chan error
+	Closed          bool
+	WriteDeleteFunc func(key string) error
+	WritePutFunc    func(key, value string) error
 }
 
-func (m *MockTransactionLogger) WriteDelete(key string) {
-	m.DeleteCalled = true
-	fmt.Println("WriteDelete called with key:", key)
+func (m *MockTransactionLogger) WriteDelete(key string) error {
+	if m.WriteDeleteFunc == nil {
+		return nil
+	}
+	return m.WriteDeleteFunc(key)
 }
 
-func (m *MockTransactionLogger) WritePut(key, value string) {
-	m.PutCalled = true
-	fmt.Println("WritePut called with key:", key, "and value:", value)
+func (m *MockTransactionLogger) WritePut(key, value string) error {
+	if m.WritePutFunc == nil {
+		return nil
+	}
+	return m.WritePutFunc(key, value)
 }
 
 func (m *MockTransactionLogger) Err() <-chan error {
@@ -28,7 +30,7 @@ func (m *MockTransactionLogger) Err() <-chan error {
 }
 
 func (m *MockTransactionLogger) Run() {
-	fmt.Println("Run called")
+
 }
 
 func (m *MockTransactionLogger) ReadEvents() (<-chan Event, <-chan error) {
@@ -37,6 +39,5 @@ func (m *MockTransactionLogger) ReadEvents() (<-chan Event, <-chan error) {
 
 func (m *MockTransactionLogger) Close() error {
 	m.Closed = true
-	fmt.Println("Close called")
 	return nil
 }
