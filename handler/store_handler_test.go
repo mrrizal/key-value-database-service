@@ -8,6 +8,7 @@ import (
 	"strings"
 
 	"github.com/gorilla/mux"
+	"github.com/mrrizal/key-value-database/logger"
 	"github.com/mrrizal/key-value-database/service"
 	. "github.com/onsi/ginkgo/v2"
 	. "github.com/onsi/gomega"
@@ -18,13 +19,16 @@ var _ = Describe("DeleteHandler", func() {
 		router       *mux.Router
 		server       *httptest.Server
 		storeHandler *StoreHandler
+		mockLogger   *logger.MockTransactionLogger
 	)
 
 	BeforeEach(func() {
 		router = mux.NewRouter()
 		storeService := service.NewStoreService()
+		mockLogger = &logger.MockTransactionLogger{}
 		storeHandler = &StoreHandler{
 			storeService,
+			mockLogger,
 		}
 
 		router.HandleFunc("/store/{key}", storeHandler.Delete).Methods(http.MethodDelete)
@@ -155,13 +159,16 @@ var _ = Describe("PutHandler", func() {
 		server       *httptest.Server
 		storeHandler *StoreHandler
 		mockService  *service.MockStoreService
+		mockLogger   *logger.MockTransactionLogger
 	)
 
 	BeforeEach(func() {
 		router = mux.NewRouter()
 		mockService = &service.MockStoreService{}
+		mockLogger = &logger.MockTransactionLogger{}
 		storeHandler = &StoreHandler{
-			svc: mockService,
+			svc:    mockService,
+			logger: mockLogger,
 		}
 
 		router.HandleFunc("/store/{key}", storeHandler.Put).Methods(http.MethodPut)

@@ -5,16 +5,19 @@ import (
 	"net/http"
 
 	"github.com/gorilla/mux"
+	"github.com/mrrizal/key-value-database/logger"
 	"github.com/mrrizal/key-value-database/service"
 )
 
 type StoreHandler struct {
-	svc service.StoreService
+	svc    service.StoreService
+	logger logger.TransactionLogger
 }
 
-func NewStoreHandler(svc service.StoreService) *StoreHandler {
+func NewStoreHandler(svc service.StoreService, logger logger.TransactionLogger) *StoreHandler {
 	return &StoreHandler{
-		svc: svc,
+		svc:    svc,
+		logger: logger,
 	}
 }
 
@@ -38,6 +41,8 @@ func (s *StoreHandler) Put(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	s.logger.WritePut(key, string(value))
 	w.WriteHeader(http.StatusCreated)
 }
 
@@ -66,5 +71,7 @@ func (s *StoreHandler) Delete(w http.ResponseWriter, r *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
+
+	s.logger.WriteDelete(key)
 	w.WriteHeader(http.StatusOK)
 }
