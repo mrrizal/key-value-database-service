@@ -29,7 +29,7 @@ func main() {
 
 	go func() {
 		log.Println("starting the server...")
-		log.Fatal(http.ListenAndServe(":8080", r))
+		log.Fatal(http.ListenAndServeTLS(":8080", "cert.pem", "key.pem", r))
 	}()
 
 	signalChannel := make(chan os.Signal, 1)
